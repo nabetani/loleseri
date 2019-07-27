@@ -8,10 +8,34 @@ struct Foo {
   float fuga;
 };
 
+bool operator==( Foo const & a, Foo const & b )
+{
+  return a.hoge==b.hoge && a.fuga==b.fuga;
+}
+
+bool operator!=( Foo const & a, Foo const & b )
+{
+  return !(a==b);
+}
+
 struct Bar {
   std::uint16_t orange;
   Foo banana;
 };
+
+bool operator==( Bar const & a, Bar const & b )
+{
+  return a.orange==b.orange && a.banana==b.banana;
+}
+
+bool operator!=( Bar const & a, Bar const & b )
+{
+  return !(a==b);
+}
+
+
+
+
 } // namespace
 
 namespace loleseri {
@@ -43,6 +67,14 @@ TEST(Struct, Simple) {
   ASSERT_EQ(0xe9, buffer[2]);
   ASSERT_EQ(0x76, buffer[3]);
   ASSERT_EQ(0x44, buffer[4]);
+
+  using deseri = loleseri::deserializer<Foo>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  Foo v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
 }
 
 TEST(Struct, StructInStruct) {

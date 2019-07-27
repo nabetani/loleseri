@@ -5,13 +5,21 @@
 TEST(Arithmetic, Uint8) {
   using seri = loleseri::serializer<std::uint8_t>;
   seri::buffer buffer;
-  std::uint8_t value = 123;
+  std::uint8_t const value = 123;
   auto last = seri::serialize(buffer.begin(), buffer.end(), &value);
   static_assert(std::is_same<seri::buffer, std::array<std::uint8_t, 1>>::value,
                 "buffer must be array<uint8_t,1>");
   ASSERT_EQ(1, buffer.size());
   ASSERT_EQ(buffer.end(), last);
   ASSERT_EQ(value, buffer[0]);
+
+  using deseri = loleseri::deserializer<std::uint8_t>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  std::uint8_t v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
 }
 
 TEST(Arithmetic, Uint16) {
@@ -25,6 +33,14 @@ TEST(Arithmetic, Uint16) {
   ASSERT_EQ(buffer.end(), last);
   ASSERT_EQ(0xcd, buffer[0]);
   ASSERT_EQ(0xab, buffer[1]);
+
+  using deseri = loleseri::deserializer<std::uint16_t>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  std::uint16_t v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
 }
 
 TEST(Arithmetic, Uint32) {
@@ -40,6 +56,15 @@ TEST(Arithmetic, Uint32) {
   ASSERT_EQ(0xab, buffer[1]);
   ASSERT_EQ(0x34, buffer[2]);
   ASSERT_EQ(0x12, buffer[3]);
+
+  using deseri = loleseri::deserializer<std::uint32_t>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  std::uint32_t v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
+
 }
 
 TEST(Arithmetic, Uint64) {
@@ -59,6 +84,15 @@ TEST(Arithmetic, Uint64) {
   ASSERT_EQ(0x60, buffer[5]);
   ASSERT_EQ(0x32, buffer[6]);
   ASSERT_EQ(0xb1, buffer[7]);
+
+  using deseri = loleseri::deserializer<std::uint64_t>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  std::uint64_t v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
+
 }
 
 TEST(Arithmetic, Int8) {
@@ -71,6 +105,15 @@ TEST(Arithmetic, Int8) {
   ASSERT_EQ(1, buffer.size());
   ASSERT_EQ(buffer.end(), last);
   ASSERT_EQ(value, buffer[0]);
+
+
+  using deseri = loleseri::deserializer<std::int8_t>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  std::int8_t v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
 }
 
 TEST(Arithmetic, Int16) {
@@ -84,6 +127,16 @@ TEST(Arithmetic, Int16) {
   ASSERT_EQ(buffer.end(), last);
   ASSERT_EQ(0x34, buffer[0]);
   ASSERT_EQ(0x12, buffer[1]);
+
+  using deseri = loleseri::deserializer<std::int16_t>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  std::int16_t v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
+
+
 }
 
 TEST(Arithmetic, Int32) {
@@ -99,6 +152,14 @@ TEST(Arithmetic, Int32) {
   ASSERT_EQ(0xab, buffer[1]);
   ASSERT_EQ(0x34, buffer[2]);
   ASSERT_EQ(0x12, buffer[3]);
+
+  using deseri = loleseri::deserializer<std::int32_t>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  std::int32_t v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
 }
 
 TEST(Arithmetic, Int64) {
@@ -119,6 +180,14 @@ TEST(Arithmetic, Int64) {
   ASSERT_EQ(0xa4, buffer[5]);
   ASSERT_EQ(0x77, buffer[6]);
   ASSERT_EQ(0x16, buffer[7]);
+
+  using deseri = loleseri::deserializer<std::int64_t>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  std::int64_t v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
 }
 
 TEST(Arithmetic, Boolean) {
@@ -133,6 +202,14 @@ TEST(Arithmetic, Boolean) {
     ASSERT_EQ(buffer.end(), last);
 
     ASSERT_EQ(serival, buffer[0]);
+
+    using deseri = loleseri::deserializer<bool>;
+    auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+    bool v1;
+    deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+    ASSERT_EQ( value, v0 );
+    ASSERT_EQ( value, v1 );
   };
   impl(true, 1);
   impl(false, 0);

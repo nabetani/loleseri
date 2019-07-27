@@ -28,6 +28,12 @@ template <typename t> struct items;
  */
 template <typename target_type, int typecat> struct serializer_impl;
 
+/** template to deserialize
+ * @tparam target_type target type
+ * @tparam typecat integer to specity category of target type
+ */
+template <typename target_type, int typecat> struct deserializer_impl;
+
 template <class type> struct is_std_array : public std::false_type {};
 template <class type, size_t size>
 struct is_std_array<std::array<type,size>> : public std::true_type {};
@@ -62,6 +68,12 @@ struct structure {};
 /** this value means "not bool, not arithetic" */
 constexpr int other = type_category<structure>::value;
 } // namespace tcat
+
+/** type to deserialize target type */
+template <typename target_type>
+using deserializer =
+    deserializer_impl<target_type, type_category<target_type>::value>;
+
 
 /** type to serialize target type
  * @tparam target_type type of the value to serialize
@@ -266,5 +278,86 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::std_array> {
       p = seri::serialize( p, end, &e );
     }
     return p;
+  }
+};
+
+/** type to deserialize integer or floating point type
+ * @tparam target_type_ type of the value to deserialize
+ */
+template <typename target_type_>
+struct loleseri::deserializer_impl<target_type_, loleseri::tcat::arithmetic> {
+
+  /** type of the value to deserialize */
+  using target_type = target_type_;
+
+  /** byte count of serialized size */
+  enum { size = sizeof(target_type) };
+
+  /** deserialize obj from input iterator
+   * @tparam itor_t type of the input iterator
+   * @param[in] begin top of the input iterator
+   * @param[in] end end of the input iterator
+   * @param[in] obj pointer to the object to serialize
+   * @return iterator pointint to the top of the unused area
+   */
+  template <typename itor_t>
+  static itor_t deserialize(itor_t begin, itor_t end, target_type *obj) {
+#if LOLESERI_LITTLE_ENDIAN
+    auto p = reinterpret_cast<std::uint8_t *>(obj);
+    std::copy( begin, begin+sizeof(target_type), p );
+    return begin+sizeof(target_type);
+#else
+#error "you should write something here."
+#endif
+  }
+  /** deserialize obj from input iterator
+   * @tparam itor_t type of the input iterator
+   * @param[in] begin top of the input iterator
+   * @param[in] end end of the input iterator
+   * @param[in] obj pointer to the object to serialize
+   * @return deserialized object
+   */
+  template <typename itor_t>
+  static target_type deserialize(itor_t begin, itor_t end) {
+    target_type obj;
+    deserialize( begin, end, &obj );
+    return obj;
+  }
+};
+
+/** type to deserialize boolean type
+ * @tparam target_type_ type of the value to deserialize
+ */
+template <typename target_type_>
+struct loleseri::deserializer_impl<target_type_, loleseri::tcat::boolean> {
+
+  /** type of the value to deserialize */
+  using target_type = target_type_;
+
+  /** byte count of serialized size */
+  enum { size = 1 };
+
+  /** deserialize obj from input iterator
+   * @tparam itor_t type of the input iterator
+   * @param[in] begin top of the input iterator
+   * @param[in] end end of the input iterator
+   * @param[in] obj pointer to the object to serialize
+   * @return iterator pointint to the top of the unused area
+   */
+  template <typename itor_t>
+  static itor_t deserialize(itor_t begin, itor_t end, target_type *obj) {
+    *obj = !!*begin;  
+    return std::next(begin);
+  }
+  /** deserialize obj from input iterator
+   * @tparam itor_t type of the input iterator
+   * @param[in] begin top of the input iterator
+   * @param[in] end end of the input iterator
+   * @param[in] obj pointer to the object to serialize
+   * @return deserialized object
+   */
+  template <typename itor_t>
+  static target_type deserialize(itor_t begin, itor_t end) {
+    return !!*begin;
   }
 };

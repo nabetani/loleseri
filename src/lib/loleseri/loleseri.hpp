@@ -39,43 +39,6 @@ template <typename target_type> struct type_category {
   };
 };
 
-/** hepler template to calculate byte count of serialized binary
- * @tparam item_type type to specify serialized binary size
- */
-template <typename item_type> struct item_size;
-
-/** hepler template to calculate byte count of serialized binary
- * @tparam value_type type of the value to serialize
- * @tparam owner_type type of the owner of the value
- */
-template <typename value_type, typename owner_type>
-struct item_size<value_type owner_type::*> {
-  enum { value = sizeof(value_type) };
-};
-
-/** template to calculate serialized binary size */
-template <typename... args> struct serialized_size;
-
-/** template to calculate serialized binary size
- * @tparam arg0 type of the first item in tuple
- * @tparam args types of the rests
- */
-template <typename arg0, typename... args>
-struct serialized_size<std::tuple<arg0, args...>> {
-  enum {
-    /** serialized binary size in bytes */
-    value = item_size<arg0>::value + serialized_size<std::tuple<args...>>::value
-  };
-};
-
-/** template to calculate serialized binary size */
-template <> struct serialized_size<std::tuple<>> {
-  enum {
-    /** serialized binary size in bytes */
-    value = 0
-  };
-};
-
 /** values to specify category of the type */
 namespace tcat {
 
@@ -96,6 +59,33 @@ constexpr int other = type_category<structure>::value;
 template <typename target_type>
 using serializer =
     serializer_impl<target_type, type_category<target_type>::value>;
+
+template< typename memptr > struct memptr_value;
+
+template< typename value, typename owner >
+struct memptr_value< value owner::*>
+{
+  using type=value;
+};
+
+template <typename... args> struct sum_of_size;
+
+template <typename arg0, typename... args>
+struct sum_of_size<std::tuple<arg0, args...>> {
+  using arg0_value_type = typename memptr_value<arg0>::type;
+  enum {
+    value = serializer<arg0_value_type>::size +
+            sum_of_size<std::tuple<args...>>::value
+  };
+};
+
+template <>
+struct sum_of_size<std::tuple<>> {
+  enum {
+    value =0
+  };
+};
+
 } // namespace loleseri
 
 /** type to serialize integer or floating point type
@@ -107,8 +97,11 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::arithmetic> {
   /** type of the value to serialize */
   using target_type = target_type_;
 
+  /** byte count of serialized size */
+  enum { size = sizeof(target_type) };
+
   /** type of array of the right size for serialization */
-  using buffer = std::array<std::uint8_t, sizeof(target_type)>;
+  using buffer = std::array<std::uint8_t, size>;
 
   /** serialize obj to output iterator
    * @tparam itor_t type of the output iterator
@@ -136,8 +129,11 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::boolean> {
   /** type of the value to serialize */
   using target_type = target_type_;
 
+  /** byte count of serialized size */
+  enum { size = 1 };
+
   /** type of array of the right size for serialization */
-  using buffer = std::array<std::uint8_t, sizeof(target_type)>;
+  using buffer = std::array<std::uint8_t, size>;
 
   /** serialize obj to output iterator
    * @tparam itor_t type of the output iterator
@@ -159,7 +155,7 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::boolean> {
 template <typename target_type_>
 struct loleseri::serializer_impl<target_type_, loleseri::tcat::other> {
   /** type of the value to serialize */
-  using target_type = target_type_;
+  using target_type = typename std::remove_cv<target_type_>::type;
 
   /** type to get list of items to serialize */
   using items = loleseri::items<target_type>;
@@ -167,8 +163,11 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::other> {
   /** type of the list of items to serialize */
   using list_type = decltype(items::list());
 
+  /** byte count of serialized size */
+  enum { size = sum_of_size<list_type>::value };
+
   /** type of array of the right size for serialization */
-  using buffer = std::array<std::uint8_t, serialized_size<list_type>::value>;
+  using buffer = std::array<std::uint8_t, size>;
 
   /** template to serialize part of struct or class
    * @tparam ix skip first ix items

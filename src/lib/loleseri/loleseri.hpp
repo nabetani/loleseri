@@ -103,9 +103,20 @@ using serializer =
  */
 template <typename target_type_>
 struct loleseri::serializer_impl<target_type_, loleseri::tcat::arithmetic> {
+
+  /** type of the value to serialize */
   using target_type = target_type_;
+
+  /** type of array of the right size for serialization */
   using buffer = std::array<std::uint8_t, sizeof(target_type)>;
 
+  /** serialize obj to output iterator
+   * @tparam itor_t type of the output iterator
+   * @param[in] begin top of the output iterator
+   * @param[in] end end of the output iterator
+   * @param[in] obj pointer to the object to serialize
+   * @return iterator which points to the begin of the unused area
+   */
   template <typename itor_t>
   static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
 #if LOLESERI_LITTLE_ENDIAN
@@ -122,9 +133,19 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::arithmetic> {
  */
 template <typename target_type_>
 struct loleseri::serializer_impl<target_type_, loleseri::tcat::boolean> {
+  /** type of the value to serialize */
   using target_type = target_type_;
+
+  /** type of array of the right size for serialization */
   using buffer = std::array<std::uint8_t, sizeof(target_type)>;
 
+  /** serialize obj to output iterator
+   * @tparam itor_t type of the output iterator
+   * @param[in] begin top of the output iterator
+   * @param[in] end end of the output iterator
+   * @param[in] obj pointer to the object to serialize
+   * @return iterator which points to the begin of the unused area
+   */
   template <typename itor_t>
   static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
     *begin = *obj ? 1 : 0;
@@ -146,19 +167,46 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::other> {
   /** type of the list of items to serialize */
   using list_type = decltype(items::list());
 
-  /**  */
+  /** type of array of the right size for serialization */
   using buffer = std::array<std::uint8_t, serialized_size<list_type>::value>;
 
+  /** template to serialize part of struct or class
+   * @tparam ix skip first ix items
+   * @tparam bool true if nothing to do more
+   */
   template <size_t ix, bool end_of_tuple> struct partial_serializer;
 
+  /** template to terminate serialization
+   * @tparam ix skip first ix items
+   */
   template <size_t ix> struct partial_serializer<ix, true> {
+    /** returns begin ( there is nothing to serialize )
+     * @param[in] begin top of the output iterator
+     * @param[in] end end of the output iterator
+     * @param[in] obj pointer to the object to serialize
+     * @return iterator which points to the begin of the unused area
+     */
     template <typename itor_t>
     static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
       return begin;
     }
   };
 
+  /** template to serialize part of struct or class
+   * @tparam ix skip first ix items
+   * @param[in] begin top of the output iterator
+   * @param[in] end end of the output iterator
+   * @param[in] obj pointer to the object to serialize
+   * @return iterator which points to the begin of the unused area
+   */
   template <size_t ix> struct partial_serializer<ix, false> {
+    /** serialize obj to output iterator
+     * @tparam itor_t type of the output iterator
+     * @param[in] begin top of the output iterator
+     * @param[in] end end of the output iterator
+     * @param[in] obj pointer to the object to serialize
+     * @return iterator which points to the begin of the unused area
+     */
     template <typename itor_t>
     static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
       constexpr size_t tc = tuple_item_count<list_type>::value;
@@ -170,6 +218,13 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::other> {
     }
   };
 
+  /** serialize obj to output iterator
+   * @tparam itor_t type of the output iterator
+   * @param[in] begin top of the output iterator
+   * @param[in] end end of the output iterator
+   * @param[in] obj pointer to the object to serialize
+   * @return iterator which points to the begin of the unused area
+   */
   template <typename itor_t>
   static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
     constexpr size_t tc = tuple_item_count<list_type>::value;

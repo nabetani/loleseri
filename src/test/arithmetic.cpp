@@ -120,3 +120,20 @@ TEST(Arithmetic, Int64) {
   ASSERT_EQ(0x77, buffer[6]);
   ASSERT_EQ(0x16, buffer[7]);
 }
+
+TEST(Arithmetic, Boolean) {
+  auto impl = [&](bool value, std::uint8_t serival) {
+    using seri = loleseri::serializer<bool>;
+    seri::buffer buffer;
+    ASSERT_EQ(1, buffer.size());
+    static_assert(
+        std::is_same<seri::buffer, std::array<std::uint8_t, 1>>::value,
+        "buffer must be array<uint8_t,1>");
+    auto last = seri::serialize(buffer.begin(), buffer.end(), &value);
+    ASSERT_EQ(buffer.end(), last);
+
+    ASSERT_EQ(serival, buffer[0]);
+  };
+  impl(true, 1);
+  impl(false, 0);
+}

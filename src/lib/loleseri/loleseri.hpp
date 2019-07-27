@@ -186,7 +186,7 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::other> {
   using items = loleseri::items<target_type>;
 
   /** type of the list of items to serialize */
-  using list_type = decltype(items::list());
+  using list_type = typename std::remove_cv<decltype(items::list())>::type;
 
   /** byte count of serialized size */
   enum { size = sum_of_size<list_type>::value };
@@ -296,13 +296,14 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::array> {
   /** type of the value to serialize */
   using target_type = typename std::remove_cv<target_type_>::type;
 
-  using element_type = typename std::remove_reference<decltype(*(target_type{}))>::type;
+  using element_type =
+      typename std::remove_reference<decltype(*(target_type{}))>::type;
 
-      /** byte count of serialized size */
-      enum {
-        element_count = size_of_array(target_type{}),
-        size = serializer<element_type>::size *element_count
-      };
+  /** byte count of serialized size */
+  enum {
+    element_count = size_of_array(target_type{}),
+    size = serializer<element_type>::size * element_count
+  };
 
   /** type of array of the right size for serialization */
   using buffer = std::array<std::uint8_t, size>;
@@ -417,7 +418,7 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::other> {
   using items = loleseri::items<target_type>;
 
   /** type of the list of items to serialize */
-  using list_type = decltype(items::list());
+  using list_type = typename std::remove_cv<decltype(items::list())>::type;
 
   /** byte count of serialized size */
   enum { size = sum_of_size<list_type>::value };
@@ -510,13 +511,14 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::array> {
   /** type of the value to serialize */
   using target_type = typename std::remove_cv<target_type_>::type;
 
-  using element_type = typename std::remove_reference<decltype(*(target_type{}))>::type;
+  using element_type =
+      typename std::remove_reference<decltype(*(target_type{}))>::type;
 
-      /** byte count of serialized size */
-      enum {
-        element_count = size_of_array(target_type{}),
-        size = serializer<element_type>::size *element_count
-      };
+  /** byte count of serialized size */
+  enum {
+    element_count = size_of_array(target_type{}),
+    size = serializer<element_type>::size * element_count
+  };
 
   /** type of array of the right size for serialization */
   using buffer = std::array<std::uint8_t, size>;

@@ -45,4 +45,12 @@ TEST(Array, Uint8) {
   ASSERT_EQ(0x55, buffer[4]);
   ASSERT_EQ(0x66, buffer[5]);
   ASSERT_EQ(0x77, buffer[6]);
+
+  using deseri = loleseri::deserializer<array_t>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  array_t v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
 }

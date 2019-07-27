@@ -33,9 +33,6 @@ bool operator!=( Bar const & a, Bar const & b )
   return !(a==b);
 }
 
-
-
-
 } // namespace
 
 namespace loleseri {
@@ -95,4 +92,12 @@ TEST(Struct, StructInStruct) {
   ASSERT_EQ(0x97, buffer[4]);
   ASSERT_EQ(0x0b, buffer[5]);
   ASSERT_EQ(0x45, buffer[6]);
+
+  using deseri = loleseri::deserializer<Bar>;
+  auto v0 = deseri::deserialize( buffer.cbegin(), buffer.cend() );
+  Bar v1;
+  deseri::deserialize( buffer.begin(), buffer.end(), &v1 );
+
+  ASSERT_EQ( value, v0 );
+  ASSERT_EQ( value, v1 );
 }

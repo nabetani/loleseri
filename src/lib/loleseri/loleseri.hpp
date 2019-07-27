@@ -19,13 +19,13 @@ template <typename target_type_>
 struct loleseri::serializer_impl<target_type_, std::true_type>
 {
   using target_type = target_type_;
-  using buffer = std::array<target_type,1>;
+  using buffer = std::array<std::uint8_t, sizeof(target_type)>;
 
   template< typename itor_t >
   static
   itor_t serialize( itor_t begin, itor_t end, target_type const * obj )
   {
-    *begin=*obj;
-    return std::next(begin, 1);
+    auto p = reinterpret_cast<std::uint8_t const*>(obj);
+    return std::copy(p, p+sizeof(target_type), begin );
   }
 };

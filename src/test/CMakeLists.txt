@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+
 set(CMAKE_CXX_FLAGS 
     "-std=c++11 -Wall -Wcast-align -Wconversion -Wold-style-cast -Wwrite-strings ")
 
@@ -27,15 +29,9 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
                  ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
                  EXCLUDE_FROM_ALL)
 
-# The gtest/gtest_main targets carry header search path
-# dependencies automatically when using CMake 2.8.11 or
-# later. Otherwise we have to add them here ourselves.
-if (CMAKE_VERSION VERSION_LESS 2.8.11)
-  include_directories("${gtest_SOURCE_DIR}/include")
-endif()
-
-
 file(GLOB testers *.cpp)
+include_directories(../lib)
+
 
 add_executable(loleseri_gt ${testers})
 target_link_libraries(loleseri_gt gtest_main)

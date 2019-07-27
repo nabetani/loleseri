@@ -14,14 +14,6 @@ constexpr std::size_t size_of_array(const T (&array)[N]) noexcept {
   return N;
 }
 
-/** template to count items in tuple */
-template <typename... args> struct tuple_item_count;
-
-/** template to count items in tuple */
-template <typename... args> struct tuple_item_count<std::tuple<args...>> {
-  enum { value = sizeof...(args) };
-};
-
 /** template to specify how to serialize
  * @tparam t target type.
  */
@@ -252,7 +244,7 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::other> {
      */
     template <typename itor_t>
     static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
-      constexpr size_t tc = tuple_item_count<list_type>::value;
+      constexpr size_t tc = std::tuple_size<list_type>::value;
       auto m = std::get<ix>(items::list());
       using item_type = typename std::remove_reference<decltype(obj->*m)>::type;
       using seri = loleseri::serializer<item_type>;
@@ -270,7 +262,7 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::other> {
    */
   template <typename itor_t>
   static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
-    constexpr size_t tc = tuple_item_count<list_type>::value;
+    constexpr size_t tc = std::tuple_size<list_type>::value;
     return partial_serializer<0, (tc <= 0)>::serialize(begin, end, obj);
   }
 };
@@ -447,7 +439,7 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::other> {
   template <size_t ix> struct partial_deserializer<ix, false> {
     template <typename itor_t>
     static itor_t deserialize(itor_t begin, itor_t end, target_type *obj) {
-      constexpr size_t tc = tuple_item_count<list_type>::value;
+      constexpr size_t tc = std::tuple_size<list_type>::value;
       auto m = std::get<ix>(items::list());
       using item_type = typename std::remove_reference<decltype(obj->*m)>::type;
       using deseri = loleseri::deserializer<item_type>;
@@ -473,7 +465,7 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::other> {
    */
   template <typename itor_t>
   static itor_t deserialize(itor_t begin, itor_t end, target_type *obj) {
-    constexpr size_t tc = tuple_item_count<list_type>::value;
+    constexpr size_t tc = std::tuple_size<list_type>::value;
     return partial_deserializer<0, (tc <= 0)>::deserialize(begin, end, obj);
   }
   /** deserialize obj from input iterator

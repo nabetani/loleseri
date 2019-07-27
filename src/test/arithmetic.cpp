@@ -137,3 +137,40 @@ TEST(Arithmetic, Boolean) {
   impl(true, 1);
   impl(false, 0);
 }
+
+TEST(Arithmetic, Float) {
+  using seri = loleseri::serializer<float>;
+  seri::buffer buffer;
+  float value = 123.456f; // リトルエンディアンで "79,e9,f6,42"
+  auto last = seri::serialize(buffer.begin(), buffer.end(), &value);
+  static_assert(std::is_same<seri::buffer, std::array<std::uint8_t, 4>>::value,
+                "buffer must be array<uint8_t,4>");
+  ASSERT_EQ(4, buffer.size());
+  ASSERT_EQ(buffer.end(), last);
+
+  ASSERT_EQ(0x79, buffer[0]);
+  ASSERT_EQ(0xe9, buffer[1]);
+  ASSERT_EQ(0xf6, buffer[2]);
+  ASSERT_EQ(0x42, buffer[3]);
+}
+
+TEST(Arithmetic, Double) {
+  using seri = loleseri::serializer<double>;
+  seri::buffer buffer;
+  double value =
+      123456.654321; // リトルエンディアンで "01,4c,19,78,0a,24,fe,40"
+  auto last = seri::serialize(buffer.begin(), buffer.end(), &value);
+  static_assert(std::is_same<seri::buffer, std::array<std::uint8_t, 8>>::value,
+                "buffer must be array<uint8_t,8>");
+  ASSERT_EQ(8, buffer.size());
+  ASSERT_EQ(buffer.end(), last);
+
+  ASSERT_EQ(0x01, buffer[0]);
+  ASSERT_EQ(0x4c, buffer[1]);
+  ASSERT_EQ(0x19, buffer[2]);
+  ASSERT_EQ(0x78, buffer[3]);
+  ASSERT_EQ(0x0a, buffer[4]);
+  ASSERT_EQ(0x24, buffer[5]);
+  ASSERT_EQ(0xfe, buffer[6]);
+  ASSERT_EQ(0x40, buffer[7]);
+}

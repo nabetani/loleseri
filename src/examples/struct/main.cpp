@@ -49,28 +49,23 @@ template <typename container> void dump(container const &c) {
 }
 
 int main() {
-  SimpleStruct hoge{1, 2, 3, 4, 5, 6, true};
+  constexpr SimpleStruct hoge{1, 2, 3, 4, 5, 6, true};
 
-  // シリアライザクラス
-  using seri = loleseri::serializer<SimpleStruct>;
+  // 必要なサイズをコンパイル時に計算する
+  constexpr size_t size = loleseri::serialized_size<SimpleStruct>();
 
-  // 必要なサイズを計算
-  constexpr size_t size = seri::size;
-
-  // バッファを確保
+  // バッファを確保。vector でも deque でも生メモリでもよい。
   std::array<std::uint8_t, size> buffer;
 
   // シリアライズ
-  seri::serialize(buffer.begin(), buffer.end(), &hoge);
+  loleseri::serialize(buffer.begin(), buffer.end(), &hoge);
 
   // シリアライズ結果をダンプ
   dump(buffer);
 
-  // デシリアライザクラス
-  using deseri = loleseri::deserializer<SimpleStruct>;
-
   // 復元
-  auto fuga = deseri::deserialize(buffer.cbegin(), buffer.cend());
+  auto fuga =
+      loleseri::deserialize<SimpleStruct>(buffer.cbegin(), buffer.cend());
 
   std::cout << "hoge: " << hoge << "\n"
             << "fuga: " << fuga << std::endl;

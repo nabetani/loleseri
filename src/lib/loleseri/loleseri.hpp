@@ -111,6 +111,25 @@ template <> struct sum_of_size<std::tuple<>> {
   enum { value = 0 };
 };
 
+template <typename target> constexpr size_t serialized_size() {
+  return serializer<target>::size;
+}
+
+template <typename target, typename itor>
+itor serialize(itor begin, itor end, target const *obj) {
+  return serializer<target>::serialize(begin, end, obj);
+}
+
+template <typename target, typename itor>
+itor deserialize(itor begin, itor end, target *obj) {
+  return deserializer<target>::deserialize(begin, end, obj);
+}
+
+template <typename target, typename itor>
+target deserialize(itor begin, itor end) {
+  return deserializer<target>::deserialize(begin, end);
+}
+
 } // namespace loleseri
 
 /** type to serialize integer or floating point type

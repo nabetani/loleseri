@@ -28,6 +28,10 @@ template <typename t> struct items;
  */
 template <typename target_type, int typecat> struct serializer_impl;
 
+template <class type> struct is_std_array : public std::false_type {};
+template <class type, size_t size>
+struct is_std_array<std::array<type,size>> : public std::true_type {};
+
 /** template to calculate category value of target type
  * @tparam target_type calculate category value of this type
  */
@@ -35,7 +39,8 @@ template <typename target_type> struct type_category {
   enum {
     /** category value */
     value = (typename std::is_same<bool, target_type>::type() ? 1 : 0) +
-            (typename std::is_arithmetic<target_type>::type() ? 2 : 0)
+            (typename std::is_arithmetic<target_type>::type() ? 2 : 0) +
+            (typename is_std_array<target_type>::type() ? 4 : 0)
   };
 };
 
@@ -47,6 +52,11 @@ constexpr int boolean = type_category<bool>::value;
 
 /** this value means "integer or floating point value but not bool" */
 constexpr int arithmetic = type_category<int>::value;
+
+/** this value means "std::array" */
+constexpr int std_array = type_category<std::array<int,1>>::value;
+
+/** type to create constant "other" */
 struct structure {};
 
 /** this value means "not bool, not arithetic" */
@@ -60,12 +70,10 @@ template <typename target_type>
 using serializer =
     serializer_impl<target_type, type_category<target_type>::value>;
 
-template< typename memptr > struct memptr_value;
+template <typename memptr> struct memptr_value;
 
-template< typename value, typename owner >
-struct memptr_value< value owner::*>
-{
-  using type=value;
+template <typename value, typename owner> struct memptr_value<value owner::*> {
+  using type = value;
 };
 
 template <typename... args> struct sum_of_size;
@@ -79,11 +87,8 @@ struct sum_of_size<std::tuple<arg0, args...>> {
   };
 };
 
-template <>
-struct sum_of_size<std::tuple<>> {
-  enum {
-    value =0
-  };
+template <> struct sum_of_size<std::tuple<>> {
+  enum { value = 0 };
 };
 
 } // namespace loleseri
@@ -228,5 +233,38 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::other> {
   static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
     constexpr size_t tc = tuple_item_count<list_type>::value;
     return partial_serializer<0, (tc <= 0)>::serialize(begin, end, obj);
+  }
+};
+
+
+/** type to serialize std::array
+ * @tparam target_type_ type of the value to serialize
+ */
+template <typename target_type_>
+struct loleseri::serializer_impl<target_type_, loleseri::tcat::std_array> {
+  /** type of the value to serialize */
+  using target_type = target_type_;
+
+  /** byte count of serialized size */
+  enum { size = sizeof(typename target_type::value_type) * std::tuple_size<target_type>::value };
+
+  /** type of array of the right size for serialization */
+  using buffer = std::array<std::uint8_t, size>;
+
+  /** serialize obj to output iterator
+   * @tparam itor_t type of the output iterator
+   * @param[in] begin top of the output iterator
+   * @param[in] end end of the output iterator
+   * @param[in] obj pointer to the object to serialize
+   * @return iterator which points to the begin of the unused area
+   */
+  template <typename itor_t>
+  static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
+    auto p = begin;
+    using seri = loleseri::serializer<typename target_type::value_type>;
+    for( auto const & e : *obj ){
+      p = seri::serialize( p, end, &e );
+    }
+    return p;
   }
 };

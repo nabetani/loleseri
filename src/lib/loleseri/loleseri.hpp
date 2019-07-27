@@ -1,45 +1,31 @@
 #pragma once
 
+#include <iterator>
 #include <tuple>
+#include <type_traits>
+#include <array>
 
-namespace loleseri
+namespace loleseri {
+
+template <typename target_type, typename arithmetic> struct serializer_impl;
+
+template <typename target_type>
+using serializer =
+    serializer_impl<target_type, typename std::is_arithmetic<target_type>::type>;
+
+} // namespace loleseri
+
+template <typename target_type_>
+struct loleseri::serializer_impl<target_type_, std::true_type>
 {
-  template<typename type>
-  struct items;
+  using target_type = target_type_;
+  using buffer = std::array<target_type,1>;
 
-
-  template <typename... args>
-  struct tuple_item_sum;
-
-  template< typename sometype >
-  struct ptr_to_member;
-
-  template< typename struct_t, typename member_t >
-  struct ptr_to_member<member_t struct_t::*>
+  template< typename itor_t >
+  static
+  itor_t serialize( itor_t begin, itor_t end, target_type const * obj )
   {
-    static constexpr inline size_t size(){  return sizeof(member_t);  }
-  };
-
-  template <typename arg0, typename... args>
-  struct tuple_item_sum<std::tuple<arg0, args...>>{
-    static constexpr size_t size(){  
-      return ptr_to_member<arg0>::size() + tuple_item_sum<std::tuple<args...>>::size();
-    }
-  };
-
-  template <>
-  struct tuple_item_sum<std::tuple<>>{
-    static constexpr size_t size(){  
-      return 0;
-    }
-  };
-
-  template<typename type>
-  constexpr
-  size_t size()
-  {
-    using list_type = typename items<type>::list_type;
-    return tuple_item_sum<list_type>::size();
+    *begin=*obj;
+    return std::next(begin, 1);
   }
-}
-
+};

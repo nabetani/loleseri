@@ -1,6 +1,6 @@
 Release note
 ======
 
-## 2019.07.28
+## v0.1.0 ( 2019.07.29 )
 
 First release.

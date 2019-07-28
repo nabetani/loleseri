@@ -15,6 +15,13 @@ constexpr std::size_t size_of_array(const T (&array)[N]) noexcept {
   return N;
 }
 
+template <typename array_type> struct element_type_of_array;
+
+template <typename element, std::size_t N>
+struct element_type_of_array<element[N]> {
+  using type = element;
+};
+
 /** template to specify how to serialize
  * @tparam t target type.
  */
@@ -129,7 +136,7 @@ template <> struct sum_of_size<std::tuple<>> {
   enum { value = 0 };
 };
 
-/** serialized size in bytes 
+/** serialized size in bytes
  * @tparam target target type
  * @return serialize size in bytes
  */
@@ -353,8 +360,7 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::array> {
   using target_type = typename std::remove_cv<target_type_>::type;
 
   /** element type of traditional array "target_type" */
-  using element_type =
-      typename std::remove_reference<decltype(*(target_type{}))>::type;
+  using element_type = typename element_type_of_array<target_type>::type;
 
   /** byte count of serialized size */
   enum {
@@ -605,8 +611,7 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::array> {
   using target_type = typename std::remove_cv<target_type_>::type;
 
   /** element type of traditional array "target_type" */
-  using element_type =
-      typename std::remove_reference<decltype(*(target_type{}))>::type;
+  using element_type = typename element_type_of_array<target_type>::type;
 
   enum {
     /** element count of traditional array "target_type" */

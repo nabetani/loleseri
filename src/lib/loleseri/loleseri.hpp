@@ -9,6 +9,7 @@
 /** low level serializer */
 namespace loleseri {
 
+/** alternative to  std::size */
 template <class T, std::size_t N>
 constexpr std::size_t size_of_array(const T (&array)[N]) noexcept {
   return N;
@@ -31,7 +32,14 @@ template <typename target_type, int typecat> struct serializer_impl;
  */
 template <typename target_type, int typecat> struct deserializer_impl;
 
+/** template to specify type is std::array or not
+ * @tparam type target type
+ */
 template <class type> struct is_std_array : public std::false_type {};
+
+/** template to specify type is std::array or not
+ * @tparam type target type
+ */
 template <class type, size_t size>
 struct is_std_array<std::array<type, size>> : public std::true_type {};
 
@@ -70,7 +78,9 @@ struct structure {};
 constexpr int other = type_category<structure>::value;
 } // namespace tcat
 
-/** type to deserialize target type */
+/** type to deserialize target type
+ * @tparam target_type type of the value to serialize
+ */
 template <typename target_type>
 using deserializer =
     deserializer_impl<target_type, type_category<target_type>::value>;
@@ -82,16 +92,30 @@ template <typename target_type>
 using serializer =
     serializer_impl<target_type, type_category<target_type>::value>;
 
+/** template to get data type from pointer to data member */
 template <typename memptr> struct memptr_value;
 
+/** template to get data type from pointer to data member */
 template <typename value, typename owner> struct memptr_value<value owner::*> {
+  /** data type */
   using type = value;
 };
 
-template <typename... args> struct sum_of_size;
+/** type that calculates the sum of the sizes of values pointed to by template
+ * member tuple types
+ * @tparam tuple_type target type
+ */
+template <typename tuple_type> struct sum_of_size;
 
+/** type that calculates the sum of the sizes of values pointed to by template
+ * member tuple types
+ * @tparam arg0 first tuple member type
+ * @tparam args rest of tuple member types
+ */
 template <typename arg0, typename... args>
 struct sum_of_size<std::tuple<arg0, args...>> {
+
+  /** data type of arg0 */
   using arg0_value_type = typename memptr_value<arg0>::type;
   enum {
     value = serializer<arg0_value_type>::size +
@@ -99,24 +123,45 @@ struct sum_of_size<std::tuple<arg0, args...>> {
   };
 };
 
+/** type that calculates the sum of the sizes of values pointed to by template
+ * member tuple types */
 template <> struct sum_of_size<std::tuple<>> {
   enum { value = 0 };
 };
 
+/** serialized size in bytes 
+ * @tparam target target type
+ * @return serialize size in bytes
+ */
 template <typename target> constexpr size_t serialized_size() {
   return serializer<target>::size;
 }
 
+/** serialize
+ * @tparam target target type
+ * @tparam itor output iterator type
+ * @return top of iterator pointing to the top of unused area
+ */
 template <typename target, typename itor>
 itor serialize(itor begin, itor end, target const *obj) {
   return serializer<target>::serialize(begin, end, obj);
 }
 
+/** deserialize
+ * @tparam target target type
+ * @tparam itor input iterator type
+ * @return top of iterator pointing to the top of unused area
+ */
 template <typename target, typename itor>
 itor deserialize(itor begin, itor end, target *obj) {
   return deserializer<target>::deserialize(begin, end, obj);
 }
 
+/** deserialize
+ * @tparam target target type
+ * @tparam itor input iterator type
+ * @return deserialized object
+ */
 template <typename target, typename itor>
 target deserialize(itor begin, itor end) {
   return deserializer<target>::deserialize(begin, end);
@@ -302,11 +347,15 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::std_array> {
   }
 };
 
+/** type to serialize traditional array
+ * @tparam target_type_ type of the value to serialize
+ */
 template <typename target_type_>
 struct loleseri::serializer_impl<target_type_, loleseri::tcat::array> {
   /** type of the value to serialize */
   using target_type = typename std::remove_cv<target_type_>::type;
 
+  /** element type of traditional array "target_type" */
   using element_type =
       typename std::remove_reference<decltype(*(target_type{}))>::type;
 
@@ -370,7 +419,6 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::arithmetic> {
    * @tparam itor_t type of the input iterator
    * @param[in] begin top of the input iterator
    * @param[in] end end of the input iterator
-   * @param[in] obj pointer to the object to serialize
    * @return deserialized object
    */
   template <typename itor_t>
@@ -409,7 +457,6 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::boolean> {
    * @tparam itor_t type of the input iterator
    * @param[in] begin top of the input iterator
    * @param[in] end end of the input iterator
-   * @param[in] obj pointer to the object to serialize
    * @return deserialized object
    */
   template <typename itor_t>
@@ -423,6 +470,7 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::boolean> {
  */
 template <typename target_type_>
 struct loleseri::deserializer_impl<target_type_, loleseri::tcat::other> {
+  /** target type */
   using target_type = typename std::remove_cv<target_type_>::type;
 
   /** type to get list of items to serialize */
@@ -436,7 +484,20 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::other> {
 
   template <size_t ix, bool end_of_tuple> struct partial_deserializer;
 
+  /** template to deserialize part of struct or class
+   * @tparam ix skip first ix items
+   * @param[in] begin top of the input iterator
+   * @param[in] end end of the input iterator
+   * @param[in] obj pointer
+   * @return iterator which points to the begin of the unused area
+   */
   template <size_t ix> struct partial_deserializer<ix, false> {
+    /** deserialize part of struct or class
+     * @tparam itor_t input iterator
+     * @param[in] begin begin of input iterator
+     * @param[in] end end of input iterator
+     * @param[out] obj address to write the result of deserialize
+     */
     template <typename itor_t>
     static itor_t deserialize(itor_t begin, itor_t end, target_type *obj) {
       constexpr size_t tc = std::tuple_size<list_type>::value;
@@ -449,7 +510,20 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::other> {
     }
   };
 
+  /** template to deserialize part of struct or class
+   * @tparam ix skip first ix items
+   * @param[in] begin top of the input iterator
+   * @param[in] end end of the input iterator
+   * @param[in] obj pointer
+   * @return iterator which points to the begin of the unused area
+   */
   template <size_t ix> struct partial_deserializer<ix, true> {
+    /** deserialize part of struct or class ( do nothing because ix is too big )
+     * @tparam itor_t input iterator
+     * @param[in] begin begin of input iterator
+     * @param[in] end end of input iterator
+     * @param[out] obj address to write the result of deserialize
+     */
     template <typename itor_t>
     static itor_t deserialize(itor_t begin, itor_t end, target_type *obj) {
       return begin;
@@ -472,7 +546,6 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::other> {
    * @tparam itor_t type of the input iterator
    * @param[in] begin top of the input iterator
    * @param[in] end end of the input iterator
-   * @param[in] obj pointer to the object to serialize
    * @return deserialized object
    */
   template <typename itor_t>
@@ -483,16 +556,26 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::other> {
   }
 };
 
+/** template to deserialize
+ * @tparam target_type target type
+ * @tparam typecat integer to specity category of target type
+ */
 template <typename target_type_>
 struct loleseri::deserializer_impl<target_type_, loleseri::tcat::std_array> {
   /** type of the value to serialize */
   using target_type = typename std::remove_cv<target_type_>::type;
 
-  /** byte count of serialized size */
   enum {
+    /** byte count of serialized size */
     size = serializer<typename target_type::value_type>::size *
            std::tuple_size<target_type>::value
   };
+  /** deserialize
+   * @tparam itor_t input iterator
+   * @param[in] begin begin of input iterator
+   * @param[in] end end of input iterator
+   * @param[obj] address to write the result of deserialize
+   */
   template <typename itor_t>
   static itor_t deserialize(itor_t begin, itor_t end, target_type *obj) {
     auto p = begin;
@@ -506,7 +589,6 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::std_array> {
    * @tparam itor_t type of the input iterator
    * @param[in] begin top of the input iterator
    * @param[in] end end of the input iterator
-   * @param[in] obj pointer to the object to serialize
    * @return deserialized object
    */
   template <typename itor_t>
@@ -517,17 +599,24 @@ struct loleseri::deserializer_impl<target_type_, loleseri::tcat::std_array> {
   }
 };
 
+/** template to deserialize
+ * @tparam target_type target type
+ * @tparam typecat integer to specity category of target type
+ */
 template <typename target_type_>
 struct loleseri::deserializer_impl<target_type_, loleseri::tcat::array> {
   /** type of the value to serialize */
   using target_type = typename std::remove_cv<target_type_>::type;
 
+  /** element type of traditional array "target_type" */
   using element_type =
       typename std::remove_reference<decltype(*(target_type{}))>::type;
 
-  /** byte count of serialized size */
   enum {
+    /** element count of traditional array "target_type" */
     element_count = size_of_array(target_type{}),
+
+    /** byte count of serialized size */
     size = serializer<element_type>::size * element_count
   };
 

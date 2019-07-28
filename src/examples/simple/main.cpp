@@ -40,7 +40,8 @@ template <> struct loleseri::items<SimpleStruct> {
   static decltype(simpleStructMembers) list() { return simpleStructMembers; }
 };
 
-template <typename container> void dump(container const &c) {
+template <typename container> //
+void dump(container const &c) {
   using namespace std;
   for (auto const &e : c) {
     cout << setw(2) << setfill('0') << hex << static_cast<int>(e) << " ";

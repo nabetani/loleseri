@@ -291,9 +291,7 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::other> {
     static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
       constexpr size_t tc = std::tuple_size<list_type>::value;
       auto m = std::get<ix>(items::list());
-      using item_type = typename std::remove_reference<decltype(obj->*m)>::type;
-      using seri = loleseri::serializer<item_type>;
-      auto p = seri::serialize(begin, end, &(obj->*m));
+      auto p = loleseri::serialize(begin, end, &(obj->*m));
       return partial_serializer<ix + 1, (tc <= ix + 1)>::serialize(p, end, obj);
     }
   };
@@ -339,9 +337,8 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::std_array> {
   template <typename itor_t>
   static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
     auto p = begin;
-    using seri = loleseri::serializer<typename target_type::value_type>;
     for (auto const &e : *obj) {
-      p = seri::serialize(p, end, &e);
+      p = loleseri::serialize(p, end, &e);
     }
     return p;
   }
@@ -378,9 +375,8 @@ struct loleseri::serializer_impl<target_type_, loleseri::tcat::array> {
   template <typename itor_t>
   static itor_t serialize(itor_t begin, itor_t end, target_type const *obj) {
     auto p = begin;
-    using seri = loleseri::serializer<element_type>;
     for (auto const &e : *obj) {
-      p = seri::serialize(p, end, &e);
+      p = loleseri::serialize(p, end, &e);
     }
     return p;
   }

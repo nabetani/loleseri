@@ -1,2 +1,5 @@
-# loleseri
-C++ low level serializer
+loleseri
+======
+Low level serializer for C++11
+
+

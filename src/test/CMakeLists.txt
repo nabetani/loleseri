@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
+if(CMAKE_HOST_SYSTEM_NAME MATCHES "^Windows$")
+else()
 set(CMAKE_CXX_FLAGS 
     "-std=c++11 -Wall -Wcast-align -Wconversion -Wold-style-cast -Wwrite-strings ")
-
+endif()
 
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)

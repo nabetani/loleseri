@@ -23,3 +23,4 @@ see examples:
 |:--|:--|:--|
 |g++-9|(Homebrew GCC 9.1.0) 9.1.0|macOS|
 |clang++|Apple LLVM version 10.0.1 (clang-1001.0.46.4)|macOS|
+|cl.exe|Version 19.21.27702.2 for x64 (Visual Studio 2019)|Windows 10 64bit(Version 10.0.17763.615])|
